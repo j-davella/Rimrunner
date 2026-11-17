@@ -1,21 +1,33 @@
 # Rimrunner
 
-A trophy truck that grows glider wings. Drive it flat out across a red-rock mesa cut up by side canyons and slot crevices, launch off a rim, press C, and glide.
+A trophy truck that grows glider wings and has no engine in the air. Drive it flat out across a red-rock mesa cut up by side canyons and slot crevices, launch off a rim, press C, and glide. Stay up on thermals.
+
+Play: https://j-davella.github.io/Rimrunner/
 
 One HTML file, three.js r128 from a CDN, no build step. Open `index.html` in a browser, or serve the folder.
+
+## Games
+
+1. **Thermal Hunter**: start high with the wings out and stay up as long as you can. Thermals have a cloud on top and hawks circling in them; circle tight in the core to climb. One point per second and one per 10 m flown; it ends when the wheels touch.
+2. **Rim to Rim**: six landing pads on the mesa tops with a canyon or crevice between each pair. Drive at the rim flat out, get the wings out, glide across and stop on the next pad. Fall short and you go back to the last pad, +10 s.
+3. **Tumble Drop**: five drops, each 300 m up, upside down and tumbling, near a landing pad. Points for how high you are when you get it upright, how close to the pad you land, and how softly.
+
+0. **Free Roam**: no clock, no score. Tab opens a map to teleport anywhere.
+
+Fly off the edge of the map and you get dropped somewhere random, 280 m up, upside down.
+
+## Phones
+
+On a phone the game switches to tilt controls (pick Keyboard or Phone on the menu to change it). Hold the phone sideways like a steering wheel: turn it to steer on the ground and to roll in the air, and tip it toward or away from you for nose up or down. Start (or LEVEL) sets the neutral position. On-screen buttons cover gas, brake, wings, flaps, road lock, view and pause. iPhones ask for motion permission when you tap Start. With no tilt sensor you get arrow buttons instead.
 
 ## The truck
 
 - Long-travel suspension on big 39-inch-style tires, ~400 kW, about 408 km/h flat out.
 - Two downforce fans pull it into the ground while the wings are folded, so it corners and climbs like nothing else.
-- **C** grows the glider wings (and folds them again). Flaps go to 50° in 10° steps on **G** / **T**.
-- It rights itself and shrugs off hard landings, but not a canyon wall or a 100 m drop into a crevice.
+- **C** grows the glider wings and folds them again. Flaps go to 50° in 10° steps on **G** / **T**.
+- It rights itself and shrugs off hard landings, but not a canyon wall.
 
-## Modes
-
-1 Ball Drop · 2 Pylon Race · 3 Canyon Run (rings on the canyon floor: drive them or glide them low) · 4 Balloon Pop · 5 Deadstick · 6 Truck Bomb · 7 Race Track · 8 Power-off 180 · 9 STOL Comp · 0 Freestyle (Tab opens a map to teleport anywhere) · Arcade Drift
-
-## Controls
+## Keyboard
 
 W A S D drive (and fly once airborne) · I gas with road lock · J K L steer and brake · B handbrake · C wings · G T flaps · V views · N map · O tweaks · H every control.
 
