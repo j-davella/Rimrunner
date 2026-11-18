@@ -1583,7 +1583,7 @@ function buildBuggy() {
   mk(new THREE.CylinderGeometry(0.15, 0.17, 0.42, 12), dark, pilot, 0, 0.34, 0.2).rotation.x = -0.25;
   mk(new THREE.SphereGeometry(0.14, 18, 14), white, pilot, 0, 0.68, 0.14);
   mk(new THREE.SphereGeometry(0.142, 18, 10, Math.PI * 1.1, Math.PI * 0.8, 1.0, 0.7), M_(0x111111, { roughness: 0.05, metalness: 0.8 }), pilot, 0, 0.68, 0.14);
-  mk(new THREE.TorusGeometry(0.11, 0.012, 8, 20), dark, g, 0, 0.47, -0.25).rotation.x = -0.4;
+  { const sw = mk(new THREE.TorusGeometry(0.11, 0.012, 8, 20), dark, g, 0, 0.47, -0.25); sw.rotation.x = -0.4; sw.scale.set(1 / TS.x, 1 / TS.y, 1 / TS.z); }
   // long-travel suspension: two parallel arms per corner hinge well inboard under the tub and the render loop swings them by
   // that wheel's compression; the hub is turned back by the same angle, so the wheel stays upright and moves almost
   // straight up and down. Modelled at full droop; the wheel centre sits 0.56 out and 0.3 down from the hinge.
@@ -1604,6 +1604,27 @@ function buildBuggy() {
     for (let i = 0; i < 3; i++) mk(spoke, dark, spin, sd * 0.152, 0, 0).rotation.x = i / 3 * Math.PI;
     parts.wheelSpin.push(spin); if (front) parts.frontSteer.push(grp); parts.legs.push(leg);
   });
+  // trophy-truck kit, built at full size in g0: round light pods on the roof, a whip antenna with a flag and an LED tip on
+  // the cage, a window net, and a solid rear axle (diff and housing) on two trailing arms that the render loop keeps
+  // strung between the rear hubs
+  for (const x of [-0.36, -0.12, 0.12, 0.36]) {
+    const pod = mk(new THREE.CylinderGeometry(0.1, 0.085, 0.12, 18).rotateX(Math.PI / 2), dark, g0, x, 1.13, -0.2);
+    mk(new THREE.CircleGeometry(0.082, 18), lampM, pod, 0, 0, -0.062).rotation.y = Math.PI;
+  }
+  rod(g0, [-0.42, 1.07, -0.2], [0.42, 1.07, -0.2], 0.018, tubeM);
+  rod(g0, [0.56, 0.85, 2.1], [0.6, 2.75, 2.2], 0.008, tubeM);
+  mk(new THREE.SphereGeometry(0.03, 8, 6), new THREE.MeshStandardMaterial({ color: 0x40ff60, emissive: 0x30ff50, emissiveIntensity: 1.5 }), g0, 0.6, 2.77, 2.2);
+  { const fl = new THREE.BufferGeometry(); fl.setAttribute('position', new THREE.Float32BufferAttribute([0.6, 2.7, 2.2, 0.6, 2.42, 2.2, 0.6, 2.56, 2.62], 3)); fl.computeVertexNormals();
+    mk(fl, new THREE.MeshBasicMaterial({ color: 0xff7a1a, side: THREE.DoubleSide }), g0); }
+  { const nc = document.createElement('canvas'); nc.width = nc.height = 64; const cx = nc.getContext('2d'); cx.strokeStyle = '#111'; cx.lineWidth = 3;
+    for (let i = 0; i <= 64; i += 12) { cx.beginPath(); cx.moveTo(i, 0); cx.lineTo(i, 64); cx.stroke(); cx.beginPath(); cx.moveTo(0, i); cx.lineTo(64, i); cx.stroke(); }
+    const nt = new THREE.CanvasTexture(nc); nt.wrapS = nt.wrapT = THREE.RepeatWrapping; nt.repeat.set(3, 2);
+    mk(new THREE.PlaneGeometry(0.6, 0.3), new THREE.MeshBasicMaterial({ map: nt, transparent: true, side: THREE.DoubleSide, alphaTest: 0.3 }), g0, -0.6, 0.83, -0.05).rotation.y = Math.PI / 2; }
+  { const housing = mk(new THREE.CylinderGeometry(0.065, 0.065, 1, 12), dark, g0), diff = mk(new THREE.SphereGeometry(0.16, 16, 12), alu, g0);
+    diff.scale.set(1, 0.9, 0.8);
+    const arms = [-1, 1].map(sd => ({ m: mk(new THREE.CylinderGeometry(0.035, 0.035, 1, 10), alu, g0), a: new V3(sd * 0.36, -0.12, BASE - 1.15) }));
+    parts.axle = { housing, diff, arms }; }
+
   // the glider: two tapered airfoil wings with upswept orange tips and a T-tail on a boom, all scaled from nothing by the render loop
   const WS = 5.2;
   const sec = (sd, f) => { const tip = Math.max(0, (f - 0.86) / 0.14), c = 1.2 * (1 - 0.5 * f) * (1 - 0.72 * tip * tip * tip);
@@ -2182,24 +2203,26 @@ function thermalAnim(dt) { for (const s of THV.spin) s.g.rotation.y += s.rate * 
 // placed at random on every load; the move is spread over ~2 s and a red one never puts you closer than 25 m to the ground
 const BEAM_FT = 152.4, BEAM_H = 1800;
 const BEAM = (() => {
-  const list = [], ok = (x, z) => Math.hypot(x, z) > 400 && Math.hypot(x, z) < 5600 && !list.some(b => Math.hypot(b.x - x, b.z - z) < 350);
+  const list = [], ok = (x, z) => Math.hypot(x, z) > 400 && Math.hypot(x, z) < 5600 && !list.some(b => Math.hypot(b.x - x, b.z - z) < 300);
   const mats = {};
   [['up', 0xffd21a], ['down', 0xff2a1a]].forEach(([k, c]) => {
     mats[k] = [new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.22, depthWrite: false, side: THREE.DoubleSide, fog: false }),
       new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.6, depthWrite: false, fog: false })];
   });
-  const outerG = new THREE.CylinderGeometry(24, 24, BEAM_H, 20, 1, true), coreG = new THREE.CylinderGeometry(6, 6, BEAM_H, 10, 1, true);
+  const BR = 36, outerG = new THREE.CylinderGeometry(BR, BR, BEAM_H, 24, 1, true), coreG = new THREE.CylinderGeometry(9, 9, BEAM_H, 12, 1, true);
+  const ringG = new THREE.RingGeometry(BR * 0.8, BR * 1.6, 32).rotateX(-Math.PI / 2);
   const put = (dir, n) => {
     for (let t = 0; t < n * 40 && list.filter(b => b.dir === dir).length < n; t++) {
       const a = Math.random() * Math.PI * 2, r = Math.sqrt(Math.random()) * 5600, x = Math.cos(a) * r, z = Math.sin(a) * r;
       if (!ok(x, z)) continue;
-      const base = hAt(x, z), g = new THREE.Group(); g.position.set(x, base + BEAM_H / 2, z);
+      const base = hAt(x, z) - 2, g = new THREE.Group(); g.position.set(x, base + BEAM_H / 2, z);
       const m = new THREE.Mesh(outerG, mats[dir][0]), c = new THREE.Mesh(coreG, mats[dir][1]);
-      m.renderOrder = c.renderOrder = 3; g.add(m, c); scene.add(g);
-      list.push({ x, z, base, r: 24, dir });
+      const ring = new THREE.Mesh(ringG, mats[dir][1]); ring.position.y = -BEAM_H / 2 + 1.5;
+      m.renderOrder = c.renderOrder = ring.renderOrder = 3; g.add(m, c, ring); scene.add(g);
+      list.push({ x, z, base, r: BR, dir });
     }
   };
-  put('up', 40); put('down', 28);
+  put('up', 60); put('down', 40);
   return { list, mats, move: 0, inside: null };
 })();
 function beamStep(dt) {
@@ -4024,6 +4047,16 @@ function loop(now) {
       if (ud.shock) { const b = ud.shock.arm.clone().applyAxisAngle(new V3(0, 0, 1), g.rotation.z).add(g.position), d = b.clone().sub(ud.shock.top), len = d.length();
         ud.shock.m.position.copy(ud.shock.top).addScaledVector(d, 0.5); ud.shock.m.scale.y = len; ud.shock.m.quaternion.setFromUnitVectors(new V3(0, 1, 0), d.multiplyScalar(-1 / len)); }
     });
+    if (pt.axle && AC.gear) {
+      // solid rear axle: housing between the two rear hubs, diff in the middle, trailing arms forward to the chassis
+      const g0 = pt.body; g0.updateMatrixWorld(true);
+      const hp = [2, 3].map(i => g0.worldToLocal(AC.gear[i].userData.hub.getWorldPosition(new V3())));
+      const line = (m, a, b) => { const d = b.clone().sub(a), L = d.length(); m.position.copy(a).addScaledVector(d, 0.5); m.scale.set(1, L, 1); m.quaternion.setFromUnitVectors(new V3(0, 1, 0), d.divideScalar(L)); };
+      const a0 = hp[0].clone().lerp(hp[1], 0.1), a1 = hp[0].clone().lerp(hp[1], 0.9);
+      line(pt.axle.housing, a0, a1); pt.axle.diff.position.copy(hp[0]).lerp(hp[1], 0.5);
+      pt.axle.diff.quaternion.copy(pt.axle.housing.quaternion);
+      pt.axle.arms.forEach((ar, i) => line(ar.m, ar.a, hp[0].clone().lerp(hp[1], i ? 0.78 : 0.22)));
+    }
     if (pt.glide) { const w = P.wing, s = Math.max(0.001, w); [pt.glide.L, pt.glide.R].forEach(o => { o.visible = w > 0.02; o.scale.set(s, 0.4 + 0.6 * s, 0.35 + 0.65 * s); }); pt.glide.tail.visible = w > 0.02; pt.glide.tail.scale.setScalar(s); }
     const bv = Math.min(1.8, P.boost || 1);
     if (pt.ailL) { const fr = AC.flaperon ? P.flap * AC.flapMax * Math.PI / 180 : 0, a = ctl.r * 0.35 * Math.min(1.6, TW.ail) * bv; pt.ailL.rotation.x = fr - a; pt.ailR.rotation.x = fr + a; }
