@@ -1668,7 +1668,11 @@ const BG = buildBuggy();
 // with a V-tail that trails airshow smoke.
 const WINGS = {
   glider: { span: 1, chord: 1, sweep: 0, S: 16, cl0: 0.3, cd0: 0.01, kInd: 0.025, airDrag: 0.15, aStall: 0.27, trim: 0.05, gn: { elev: 5, ail: 8, rud: 4, stab: 20, beta: 7, damp: [5, 3, 4] } },
-  speed: { span: 0.8, chord: 0.9, sweep: 0.2, S: 14, cl0: 0.32, cd0: 0.004, kInd: 0.016, airDrag: 0.08, aStall: 0.3, trim: 0.03, gn: { elev: 9, ail: 22, rud: 6, stab: 12, beta: 5, damp: [3.2, 2.2, 1.6] } },
+  // acro: a symmetric wing (flies the same upside down), and the stick commands a rotation rate the way an aerobatic
+  // plane's big surfaces do: roll / pitch / yaw rates in rad/s at full stick, it stops dead when you let go and holds
+  // whatever attitude you left it in. Weak pitch stability, no auto-coordination, a fuselage that holds knife edge.
+  speed: { span: 0.8, chord: 0.9, sweep: 0.2, S: 14, cl0: 0, cd0: 0.004, kInd: 0.016, airDrag: 0.08, aStall: 0.3, trim: 0.05, gn: { elev: 9, ail: 22, rud: 6, stab: 7, beta: 6, damp: [3.2, 2.2, 1.6] },
+    acro: { roll: 6.2, pitch: 3.2, yaw: 1.7, side: 0.9, track: 28 } },
 };
 let wingId = 'glider';
 const wheelDef = (M, share, p, steer = false) => { const k = M * 9.8 * share / 0.05; return { p: new V3(...p), k, c: 2 * 0.7 * Math.sqrt(k * M * share), steer }; };
@@ -3048,7 +3052,7 @@ function tiltEnable() {
 function touchLayout() { $('touch').classList.toggle('notilt', !(TOUCH.tiltOn && TOUCH.tilt)); $('tiltbtn').textContent = TOUCH.tiltOn ? 'Tilt: on' : 'Tilt: off (arrows)'; }
 function setWing(id) {
   wingId = id; const W = WINGS[id], A = AIRCRAFT.buggy;
-  ['S', 'cl0', 'cd0', 'kInd', 'airDrag', 'aStall', 'trim'].forEach(k => { A[k] = W[k]; }); A.gn = W.gn;
+  ['S', 'cl0', 'cd0', 'kInd', 'airDrag', 'aStall', 'trim'].forEach(k => { A[k] = W[k]; }); A.gn = W.gn; A.acro = W.acro || null;
   const pt = A.parts; pt.tailStd.visible = id !== 'speed'; pt.tailV.visible = id === 'speed';
   [pt.glide.L, pt.glide.R].forEach((o, i) => { o.rotation.y = (i ? -1 : 1) * W.sweep; });
   document.querySelectorAll('#wingpick button').forEach(b => b.classList.toggle('on', b.dataset.w === id));
@@ -3298,7 +3302,8 @@ function CL(a) {
 }
 const tq = new THREE.Quaternion();
 const fwd = new V3(), up = new V3(), right = new V3();
-const ease = (cur, tgt, dt) => cur + (tgt - cur) * (1 - Math.exp(-dt / (Math.abs(tgt) > Math.abs(cur) ? 0.32 * TW.rampIn : 0.2 * TW.rampOut)));
+const ease = (cur, tgt, dt) => { const acro = AC.acro && P.wing > 0.5, grow = Math.abs(tgt) > Math.abs(cur);
+  return cur + (tgt - cur) * (1 - Math.exp(-dt / (grow ? 0.32 * TW.rampIn * (acro ? 0.3 : 1) : 0.2 * TW.rampOut * (acro ? 0.1 : 1)))); };
 const expo = v => { const e = Math.min(1, 0.65 * TW.expo); return v * (1 - e + e * v * v); };
 // car steering lock shrinks with speed so full key = the most turn the tires can actually hold, never a plow or a spin
 // steerA: wheelbase x the cornering acceleration full lock asks for, so the car turns as hard at 150 km/h as at 30
@@ -3496,7 +3501,7 @@ function stepPlane(dt) {
       const qd = 0.5 * RHO * V * V * A.S * (A.wings ? 0.04 + 0.96 * wg : 1), cl =CL(alpha) + P.flap * (A.flapCL || 0.6) * (Math.abs(alpha) < A.aStall ? 1 : 0.5);
       const cd = A.cd0 + (A.kInd || 0.06) * cl * cl + 1.1 * Math.sin(alpha) ** 2 + (A.flapCD || 0.07) * P.flap * P.flap;
       const fb = liftDir.multiplyScalar(qd * cl * (A.wings ? wg * wg : 1)).addScaledVector(vh, -qd * cd);
-      fb.x -= qd * 0.35 * beta;
+      fb.x -= qd * (A.acro ? A.acro.side : 0.35) * beta;
       F.add(fb.applyQuaternion(P.q));
     }
     const T = A.thrust * TW.power * P.throttle * Math.max(0, 1 - Math.max(0, -vb.z) / A.vmax);
@@ -3504,8 +3509,18 @@ function stepPlane(dt) {
     const qn = Math.min((V / A.vref) ** 2, 2.5) * (A.wings ? 0.12 + 0.88 * wg : 1), dmp = Math.max(V / A.vref, 0.3), qt = qn + 0.12 * P.throttle;
     const stalled = Math.abs(alpha) > A.aStall && qn > 0.1;
     // flap autotrim: as flaps come out the trim follows, so the nose doesn't balloon and you don't have to chase it with keys
-    const trimA = A.trim + P.trim * 0.12 - P.flap * (A.flapCL || 0.6) / 4.8 * 0.45 * TW.ftrim + Math.max(-0.04, Math.min(0.04, -P.v.y * 0.012));
-    ang.set(
+    const trimA = A.trim + P.trim * 0.12 - P.flap * (A.flapCL || 0.6) / 4.8 * 0.45 * TW.ftrim + (A.acro ? 0 : Math.max(-0.04, Math.min(0.04, -P.v.y * 0.012)));
+    if (A.acro && wg > 0.5) {
+      // rate control: each axis chases the rate the stick asks for (scaled by airflow), so rolls start and stop crisply
+      // and nothing levels itself. Pitch keeps a weak pull toward the trim angle of attack; yaw keeps its weathervane.
+      const ac = A.acro, sf = Math.min(1, V / A.vref) * wg, kt = ac.track * TW.damp * Math.max(0.25, sf);
+      const pc = expo(ctl.p) * ac.pitch * TW.elev * boostF * sf * (ctl.p > 0 ? 1 - 0.6 * smooth(A.aStall * 0.9, A.aStall * 1.2, alpha) : 1);
+      const rc = expo(ctl.r) * ac.roll * TW.ail * boostF * sf * (stalled ? 0.5 : 1), yc = expo(ctl.y) * ac.yaw * TW.rud * boostF * sf;
+      ang.set(
+        kt * (pc - P.w.x) - qn * gn.stab * TW.stab * (alpha - trimA),
+        kt * 0.3 * (yc - P.w.y) - qn * gn.beta * beta,
+        kt * (rc - P.w.z) + (stalled ? Math.sin(game.t * 3.1) * qn * 0.25 * gn.ail : 0));
+    } else ang.set(
       qt * expo(ctl.p) * gn.elev * TW.elev * boostF * (ctl.p > 0 && boostF === 1 ? 1 - 0.75 * smooth(A.aStall * 0.85, A.aStall, alpha) : 1) - qn * gn.stab * TW.stab * (alpha - trimA) - gn.damp[0] * TW.damp * P.w.x * dmp,
       qt * expo(ctl.y) * gn.rud * TW.rud * boostF - qn * gn.beta * beta - gn.damp[1] * TW.damp * P.w.y * dmp,
       qn * expo(ctl.r) * (stalled ? 0.4 : 1) * gn.ail * TW.ail * boostF - gn.damp[2] * TW.damp * P.w.z * dmp + (stalled ? Math.sin(game.t * 3.1) * qn * (boostF > 1 ? 0.6 : 0.15) * gn.ail : 0));
