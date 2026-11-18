@@ -3386,7 +3386,8 @@ function stepPlane(dt) {
   if (k('KeyE')) yaw -= 1;
   const TA = TOUCH.on ? touchAxes() : null;
   // phone: tilt (or the arrows) is the stick in the air, the wheel on the ground
-  if (TA && !(A.car && P.wheels >= 2)) { pitch = Math.max(-1, Math.min(1, pitch + TA.p)); roll = Math.max(-1, Math.min(1, roll - TA.s)); }
+  if (TA && A.car && P.wheels >= 2 && A.acro && P.wing > 0.5) pitch = Math.max(-1, Math.min(1, pitch + TA.p)); // speed wing: tilt back to rotate
+  else if (TA && !(A.car && P.wheels >= 2)) { pitch = Math.max(-1, Math.min(1, pitch + TA.p)); roll = Math.max(-1, Math.min(1, roll - TA.s)); }
   if (stickyOn && !A.car && !A.boat) {
     const rate = 1.1 / Math.max(0.1, TW.rampIn), cl = v => Math.max(-1, Math.min(1, v));
     STK.p = cl(STK.p + pitch * rate * dt); STK.r = cl(STK.r + roll * rate * dt); STK.y = cl(STK.y + yaw * rate * dt);
@@ -3527,7 +3528,13 @@ function stepPlane(dt) {
       qt * expo(ctl.y) * gn.rud * TW.rud * boostF - qn * gn.beta * beta - gn.damp[1] * TW.damp * P.w.y * dmp,
       qn * expo(ctl.r) * (stalled ? 0.4 : 1) * gn.ail * TW.ail * boostF - gn.damp[2] * TW.damp * P.w.z * dmp + (stalled ? Math.sin(game.t * 3.1) * qn * (boostF > 1 ? 0.6 : 0.15) * gn.ail : 0));
   }
-  if (A.car && P.wheels >= 2) ang.set(0, 0, 0);
+  // on the ground the truck doesn't pitch or roll from the stick, except with the speed wing out: its wing is symmetric,
+  // so it makes no lift sitting level and has to rotate like a real plane. Pull back and the nose comes up on the rear
+  // wheels (capped near the stall angle), the wing gets an angle of attack, and it lifts off.
+  if (A.car && P.wheels >= 2) {
+    const rot = A.acro && wg > 0.5 && ctl.p > 0.05 && V > 8 && alpha < A.aStall * 0.75;
+    ang.set(rot ? Math.max(0, ang.x) : 0, 0, 0);
+  }
   P.alpha = alpha;
 
   // landing gear
