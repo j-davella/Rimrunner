@@ -1671,8 +1671,8 @@ const WINGS = {
   // acro: a symmetric wing (flies the same upside down), and the stick commands a rotation rate the way an aerobatic
   // plane's big surfaces do: roll / pitch / yaw rates in rad/s at full stick, it stops dead when you let go and holds
   // whatever attitude you left it in. Weak pitch stability, no auto-coordination, a fuselage that holds knife edge.
-  speed: { span: 0.8, chord: 0.9, sweep: 0.2, S: 14, cl0: 0, cd0: 0.004, kInd: 0.016, airDrag: 0.08, aStall: 0.3, trim: 0.05, gn: { elev: 9, ail: 22, rud: 6, stab: 7, beta: 6, damp: [3.2, 2.2, 1.6] },
-    acro: { roll: 6.2, pitch: 3.2, yaw: 1.7, side: 0.9, track: 28 } },
+  speed: { span: 0.8, chord: 0.9, sweep: 0.2, S: 12, cl0: 0, cd0: 0.0028, kInd: 0.016, airDrag: 0.05, aStall: 0.3, trim: 0.022, gn: { elev: 9, ail: 22, rud: 6, stab: 7, beta: 6, damp: [3.2, 2.2, 1.6] },
+    acro: { roll: 3.0, pitch: 3.0, yaw: 1.7, side: 0.9, track: 28 } },
 };
 let wingId = 'glider';
 const wheelDef = (M, share, p, steer = false) => { const k = M * 9.8 * share / 0.05; return { p: new V3(...p), k, c: 2 * 0.7 * Math.sqrt(k * M * share), steer }; };
