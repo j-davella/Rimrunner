@@ -267,8 +267,10 @@ body.phone .deskonly{display:none}
     <div class="modes" id="gfx"><button data-g="full">Full</button><button data-g="lite">Lite</button><button data-g="potato">Potato</button></div>
     <div class="sm" style="display:none">Lives</div>
     <div class="modes" id="livespick" style="display:none"><button data-l="0">Off</button><button data-l="3">3</button><button data-l="5">5</button><button data-l="10">10</button><button data-l="inf">Unlimited</button></div>
-    <p class="keyline"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> drive, then fly &nbsp; <kbd>C</kbd> wings &nbsp; <kbd>G</kbd><kbd>T</kbd> flaps &nbsp; <kbd>V</kbd> views &nbsp; <kbd>H</kbd> every control</p>
-    <div class="sm" style="margin:-6px 0 6px">Controls</div>
+    <p class="keyline"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> drive, then fly &nbsp; <kbd>C</kbd> wings &nbsp; <kbd>F</kbd><kbd>R</kbd> flaps &nbsp; <kbd>V</kbd> views &nbsp; <kbd>H</kbd> every control</p>
+    <div class="sm" style="margin:-6px 0 6px">Wing</div>
+    <div class="modes" id="wingpick"><button data-w="glider">Glider: floaty, stays up</button><button data-w="speed">Speed: fast, acrobatic, smoke</button></div>
+    <div class="sm" style="margin:2px 0 6px">Controls</div>
     <div class="modes" id="ctlpick"><button data-c="keys">Keyboard</button><button data-c="phone">Phone: tilt + touch</button></div>
     <div class="go deskonly">Pick a mode, then press Enter</div>
     <div class="sm phoneonly">Hold the phone sideways like a steering wheel. Tilt to steer; in the air, tilt it toward or away from you for nose up or down. Start sets the level.</div>
@@ -1639,17 +1641,36 @@ function buildBuggy() {
     return p; };
   const tail = pivot(g, 0, 0.62, 1.2);
   rod(tail, [0, 0, 0], [0, 0.16, 2.3], 0.05, tubeM); rod(tail, [0, 0.16, 2.3], [0, 0.2, 2.75], 0.035, tubeM);
-  { const fin = loftWing([[0, 0, 1.55, 1.05, 0.1], [0.45, 0, 1.82, 0.88, 0.1], [0.9, 0, 2.08, 0.72, 0.1], [1.25, 0, 2.28, 0.6, 0.1]], 0); fin.rotateZ(Math.PI / 2); mk(fin, wingM, tail, 0, 0.14, 0);
+  const tailStd = pivot(tail, 0, 0, 0), tailV = pivot(tail, 0, 0, 0); tailV.visible = false;
+  { const fin = loftWing([[0, 0, 1.55, 1.05, 0.1], [0.45, 0, 1.82, 0.88, 0.1], [0.9, 0, 2.08, 0.72, 0.1], [1.25, 0, 2.28, 0.6, 0.1]], 0); fin.rotateZ(Math.PI / 2); mk(fin, wingM, tailStd, 0, 0.14, 0);
     const hs = [[0, 2.24, 0.62], [0.5, 2.3, 0.55], [1.0, 2.38, 0.46], [1.3, 2.46, 0.36], [1.45, 2.54, 0.24], [1.5, 2.62, 0.1]];
-    mk(loftWing(hs.slice().reverse().map(([x, z0, c]) => [-x, 0, z0, c, 0.09]).concat(hs.slice(1).map(([x, z0, c]) => [x, 0, z0, c, 0.09])), 0), wingM, tail, 0, 1.4, 0);
-    [-1, 1].forEach(sd => mk(loftWing(hs.slice(3).map(([x, z0, c]) => [sd * x, 0, z0 - 0.003, c + 0.006, 0.1]), 0), paint, tail, 0, 1.4, 0));
-    const bul = mk(new THREE.SphereGeometry(0.07, 12, 10), paint, tail, 0, 1.4, 2.5); bul.scale.set(1, 1, 5.5); }
+    mk(loftWing(hs.slice().reverse().map(([x, z0, c]) => [-x, 0, z0, c, 0.09]).concat(hs.slice(1).map(([x, z0, c]) => [x, 0, z0, c, 0.09])), 0), wingM, tailStd, 0, 1.4, 0);
+    [-1, 1].forEach(sd => mk(loftWing(hs.slice(3).map(([x, z0, c]) => [sd * x, 0, z0 - 0.003, c + 0.006, 0.1]), 0), paint, tailStd, 0, 1.4, 0));
+    const bul = mk(new THREE.SphereGeometry(0.07, 12, 10), paint, tailStd, 0, 1.4, 2.5); bul.scale.set(1, 1, 5.5); }
+  // speed-wing tail: a swept red V (butterfly) tail with white tips, and a smoke nozzle out the back of the boom
+  { const red = PH_(0xd81e2a, { roughness: 0.3, clearcoat: 0.9 });
+    const vs = [[0, 2.1, 0.75], [0.4, 2.3, 0.6], [0.8, 2.52, 0.45], [1.1, 2.7, 0.32], [1.25, 2.8, 0.2]];
+    [-1, 1].forEach(sd => {
+      const pv = pivot(tailV, 0, 0.2, 0); pv.rotation.z = sd * 0.62;
+      mk(loftWing(vs.slice(0, 4).map(([x, z0, c]) => [sd * x, 0, z0, c, 0.09]), 0), red, pv);
+      mk(loftWing(vs.slice(3).map(([x, z0, c]) => [sd * x, 0, z0, c, 0.09]), 0), white, pv);
+    });
+    mk(new THREE.CylinderGeometry(0.045, 0.07, 0.25, 12).rotateX(Math.PI / 2), alu, tailV, 0, 0.2, 2.82);
+    parts.smokeAt = pivot(tailV, 0, 0.2, 3.0); }
+  parts.tailStd = tailStd; parts.tailV = tailV;
   parts.glide = { L: wing(-1), R: wing(1), tail };
   [parts.glide.L, parts.glide.R, tail].forEach(o => { o.visible = false; });
   return { g: outer, parts };
 }
 
 const BG = buildBuggy();
+// two glider wings. Glider: big, floaty, stable. Speed: a bit shorter, much less drag, quick and loose for aerobatics,
+// with a V-tail that trails airshow smoke.
+const WINGS = {
+  glider: { span: 1, chord: 1, sweep: 0, S: 16, cl0: 0.3, cd0: 0.01, kInd: 0.025, airDrag: 0.15, aStall: 0.27, trim: 0.05, gn: { elev: 5, ail: 8, rud: 4, stab: 20, beta: 7, damp: [5, 3, 4] } },
+  speed: { span: 0.8, chord: 0.9, sweep: 0.2, S: 14, cl0: 0.32, cd0: 0.004, kInd: 0.016, airDrag: 0.08, aStall: 0.3, trim: 0.03, gn: { elev: 9, ail: 22, rud: 6, stab: 12, beta: 5, damp: [3.2, 2.2, 1.6] } },
+};
+let wingId = 'glider';
 const wheelDef = (M, share, p, steer = false) => { const k = M * 9.8 * share / 0.05; return { p: new V3(...p), k, c: 2 * 0.7 * Math.sqrt(k * M * share), steer }; };
 const hardPts = a => a.map(q => new V3(...q));
 const AIRCRAFT = {};
@@ -2197,6 +2218,30 @@ const THV = (() => {
   });
   return { spin };
 })();
+// airshow smoke from the speed wing's tail: puffs that grow and fade, the colour running round the rainbow
+const SMOKE = (() => {
+  const geo = new THREE.IcosahedronGeometry(1, 1), pool = [];
+  for (let i = 0; i < 260; i++) { const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, opacity: 0 })); m.visible = false; scene.add(m); pool.push({ m, age: 9 }); }
+  return { pool, i: 0, acc: 0, hue: 0 };
+})();
+function smokeStep(dt, src) {
+  const L = 5;
+  if (src) {
+    SMOKE.acc += dt;
+    const at = src.getWorldPosition(new V3());
+    while (SMOKE.acc > 0.025) {
+      SMOKE.acc -= 0.025; SMOKE.hue = (SMOKE.hue + 0.004) % 1;
+      const p = SMOKE.pool[SMOKE.i]; SMOKE.i = (SMOKE.i + 1) % SMOKE.pool.length;
+      p.age = 0; p.m.visible = true; p.m.position.copy(at); p.m.material.color.setHSL(SMOKE.hue, 0.9, 0.62);
+    }
+  } else SMOKE.acc = 0;
+  for (const p of SMOKE.pool) {
+    if (p.age >= L) { if (p.m.visible) p.m.visible = false; continue; }
+    p.age += dt; const f = p.age / L;
+    p.m.scale.setScalar(0.15 + 3.2 * f); p.m.material.opacity = 0.7 * Math.min(1, p.age * 3) * (1 - f) * (1 - f);
+    p.m.position.y += dt * 0.4;
+  }
+}
 function thermalAnim(dt) { for (const s of THV.spin) s.g.rotation.y += s.rate * dt; }
 
 // ---------- lift and sink beams: fly into a yellow one and it hauls you up 500 ft, a red one drops you 500 ft ----------
@@ -3001,6 +3046,13 @@ function tiltEnable() {
   setTimeout(() => { if (!TOUCH.tilt && TOUCH.on && TOUCH.tiltOn) toast('No tilt sensor: use the arrows'); }, 2500);
 }
 function touchLayout() { $('touch').classList.toggle('notilt', !(TOUCH.tiltOn && TOUCH.tilt)); $('tiltbtn').textContent = TOUCH.tiltOn ? 'Tilt: on' : 'Tilt: off (arrows)'; }
+function setWing(id) {
+  wingId = id; const W = WINGS[id], A = AIRCRAFT.buggy;
+  ['S', 'cl0', 'cd0', 'kInd', 'airDrag', 'aStall', 'trim'].forEach(k => { A[k] = W[k]; }); A.gn = W.gn;
+  const pt = A.parts; pt.tailStd.visible = id !== 'speed'; pt.tailV.visible = id === 'speed';
+  [pt.glide.L, pt.glide.R].forEach((o, i) => { o.rotation.y = (i ? -1 : 1) * W.sweep; });
+  document.querySelectorAll('#wingpick button').forEach(b => b.classList.toggle('on', b.dataset.w === id));
+}
 function setPhone(on) {
   TOUCH.on = on; document.body.classList.toggle('phone', on);
   document.querySelectorAll('#ctlpick button').forEach(b => b.classList.toggle('on', b.dataset.c === (on ? 'phone' : 'keys')));
@@ -3010,6 +3062,9 @@ function setPhone(on) {
   let sv = null; try { sv = localStorage.getItem('rimrunner-phone'); } catch (e) {}
   const touchy = !!(window.matchMedia && matchMedia('(pointer: coarse)').matches); // phones and tablets, not touch-screen laptops
   setPhone(sv ? sv === '1' : touchy);
+  let wv = null; try { wv = localStorage.getItem('rimrunner-wing'); } catch (e) {}
+  setWing(WINGS[wv] ? wv : 'glider');
+  document.querySelectorAll('#wingpick button').forEach(b => b.addEventListener('click', () => { b.blur(); setWing(b.dataset.w); try { localStorage.setItem('rimrunner-wing', wingId); } catch (e) {} }));
   document.querySelectorAll('#ctlpick button').forEach(b => b.addEventListener('click', () => { b.blur(); setPhone(b.dataset.c === 'phone'); try { localStorage.setItem('rimrunner-phone', TOUCH.on ? '1' : '0'); } catch (e) {} if (TOUCH.on) tiltEnable(); }));
   $('startbtn').addEventListener('click', () => {
     tiltEnable(); audioInit();
@@ -4057,7 +4112,8 @@ function loop(now) {
       pt.axle.diff.quaternion.copy(pt.axle.housing.quaternion);
       pt.axle.arms.forEach((ar, i) => line(ar.m, ar.a, hp[0].clone().lerp(hp[1], i ? 0.78 : 0.22)));
     }
-    if (pt.glide) { const w = P.wing, s = Math.max(0.001, w); [pt.glide.L, pt.glide.R].forEach(o => { o.visible = w > 0.02; o.scale.set(s, 0.4 + 0.6 * s, 0.35 + 0.65 * s); }); pt.glide.tail.visible = w > 0.02; pt.glide.tail.scale.setScalar(s); }
+    if (pt.glide) { const w = P.wing, s = Math.max(0.001, w), WK = WINGS[wingId]; [pt.glide.L, pt.glide.R].forEach(o => { o.visible = w > 0.02; o.scale.set(s * WK.span, 0.4 + 0.6 * s, (0.35 + 0.65 * s) * WK.chord); });
+      smokeStep(dt, pt.smokeAt && wingId === 'speed' && w > 0.6 && !P.wheels && !P.crashed && game.state === 'flying' ? pt.smokeAt : null); pt.glide.tail.visible = w > 0.02; pt.glide.tail.scale.setScalar(s); }
     const bv = Math.min(1.8, P.boost || 1);
     if (pt.ailL) { const fr = AC.flaperon ? P.flap * AC.flapMax * Math.PI / 180 : 0, a = ctl.r * 0.35 * Math.min(1.6, TW.ail) * bv; pt.ailL.rotation.x = fr - a; pt.ailR.rotation.x = fr + a; }
     if (pt.elev) pt.elev.rotation.x = -(ctl.p * Math.min(1.6, TW.elev) * bv + (AC.heli ? 0 : P.trim * 0.35)) * (AC.heli ? 0.15 : 0.4);
