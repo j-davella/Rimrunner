@@ -88,6 +88,8 @@ canvas{position:fixed;inset:0;display:block}
 .twhead b{font-size:20px}
 .twhead button{margin-left:auto;font:inherit;font-weight:600;font-size:14px;padding:3px 10px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--text);cursor:pointer}
 .twrow{margin:8px 0}
+.twsec{margin:14px 0 2px;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#d8a900}
+.twsec:first-child{margin-top:4px}
 .twrow label{display:flex;justify-content:space-between;font-size:15px;font-weight:600}
 .twrow label span{color:var(--dim);font-variant-numeric:tabular-nums}
 .twrow input{width:100%;accent-color:#d8a900}
@@ -219,8 +221,8 @@ body.phone .deskonly{display:none}
         <dt><kbd>A</kbd> <kbd>D</kbd></dt><dd>Roll left / right</dd>
         <dt><kbd>Q</kbd> <kbd>E</kbd></dt><dd>Rudder</dd>
         <dt><kbd>Shift</kbd></dt><dd>Hold for extra control throw</dd>
-        <dt><kbd>G</kbd> <kbd>T</kbd></dt><dd>Flaps down / up, 10° steps to 50°</dd>
-        <dt><kbd>,</kbd> <kbd>.</kbd> <kbd>/</kbd></dt><dd>Trim nose down / nose up / neutral</dd>
+        <dt><kbd>F</kbd> <kbd>R</kbd></dt><dd>Flaps down / up, 10° steps to 50°</dd>
+        <dt><kbd>T</kbd> <kbd>G</kbd> <kbd>/</kbd></dt><dd>Trim nose down / nose up / neutral (<kbd>,</kbd> <kbd>.</kbd> work too)</dd>
         <dt><kbd>X</kbd> <kbd>Y</kbd> <kbd>Z</kbd></dt><dd>Aileron-rudder mix, sticky stick on / off, center the sticky stick</dd>
         <dt>Landing</dt><dd>It rights itself and shrugs off hard landings, but not a canyon wall</dd>
       </dl></section>
@@ -292,8 +294,8 @@ body.phone .deskonly{display:none}
   <button class="tb" id="tbBrake" data-key="KeyK" type="button">BRAKE</button>
   <button class="tb s" id="tbWings" data-key="KeyC" type="button">WINGS</button>
   <button class="tb s" id="tbLock" data-key="KeyI" type="button">ROAD LOCK</button>
-  <button class="tb s" id="tbFlapD" data-key="KeyG" type="button">FLAP +</button>
-  <button class="tb s" id="tbFlapU" data-key="KeyT" type="button">FLAP −</button>
+  <button class="tb s" id="tbFlapD" data-key="KeyF" type="button">FLAP +</button>
+  <button class="tb s" id="tbFlapU" data-key="KeyR" type="button">FLAP −</button>
   <button class="tb pad" id="tbUp" data-hold="up" type="button">▲</button>
   <button class="tb pad" id="tbDown" data-hold="down" type="button">▼</button>
   <button class="tb pad" id="tbLeft" data-hold="left" type="button">◀</button>
@@ -1626,14 +1628,14 @@ const BG = buildBuggy();
 const wheelDef = (M, share, p, steer = false) => { const k = M * 9.8 * share / 0.05; return { p: new V3(...p), k, c: 2 * 0.7 * Math.sqrt(k * M * share), steer }; };
 const hardPts = a => a.map(q => new V3(...q));
 const AIRCRAFT = {};
-// car on the ground, glider in the air: C grows and folds the wings, G / T work the flaps. Long soft springs with heavy damping deep
+// car on the ground, glider in the air: C grows and folds the wings, F / R work the flaps, T / G the trim. Long soft springs with heavy damping deep
 // in the travel, so it floats over rough ground and shrugs off landings. Folded, two fans pull it into the ground (fan) and it has
 // a lot of shove from a standstill (accMax); pwr sets the top speed. Traction is deliberately far better than
 // any real tire (grip, offGrip), the mass is treated as sitting at axle height (cgH) so it cannot trip over that
 // grip, and steerA asks the front wheels for a set cornering force at any speed.
 AIRCRAFT.buggy = { name: 'Glide Buggy', car: true, wings: true, model: BG.g, parts: BG.parts, M: 320, S: 16, I: new V3(380, 520, 300),
   wheels: [[-0.76, -0.95, true], [0.76, -0.95, true], [-0.76, 0.95, false], [0.76, 0.95, false]].map(([x, z, f]) => ({ p: new V3(x, -0.9, z), k: 6500, k2: 45000, c: 900, c2: 12000, bump: 0.6, steer: f, front: f })),
-  hardV: 14, gear: BG.parts.legs, gearArm: 0.56, gearL: Math.hypot(0.56, 0.3), gearDrop: 0.3, noFlip: true, crashV: 45, wheelR: 0.5, pwr: 400000, accMax: 32, fan: 14, grip: 2.4, offGrip: 1.25, steerA: 60, cgH: 0.72, rollK: 0.012,
+  hardV: 14, gear: BG.parts.legs, gearArm: 0.56, gearL: Math.hypot(0.56, 0.3), gearDrop: 0.3, noFlip: true, crashV: 45, wheelR: 0.5, pwr: 400000, accMax: 32, fan: 26, jumpG: 0.8, grip: 2.4, offGrip: 1.25, steerA: 60, cgH: 0.72, rollK: 0.012,
   hard: hardPts([[0, 0.95, 0.17]]),
   thrust: 0, vmax: 60, cl0: 0.3, aStall: 0.27, cd0: 0.01, kInd: 0.025, airDrag: 0.15, gn: { elev: 5, ail: 8, rud: 4, stab: 20, beta: 7, damp: [5, 3, 4] }, vref: 22, trim: 0.05, flaps: true, flapMax: 50, flapSteps: 5, flapCL: 1.125, flapCD: 0.25,
   cam: { d: 8, h: 2.4 }, size: 6, eye: new V3(0, 0.7, 0.02), wingCam: new V3(-1.5, 0.9, 0.5),
@@ -2872,9 +2874,9 @@ window.addEventListener('keydown', e => {
   if (game.state === 'flying') {
     if (e.code === 'Space' && (game.mode === 'drop' || game.mode === 'truck')) dropBall();
     if (e.code === 'KeyI') lockOn();
-    if ((e.code === 'KeyG' || e.code === 'KeyT') && AC.flaps) {
+    if ((e.code === 'KeyF' || e.code === 'KeyR') && AC.flaps && !e.repeat) {
       const st = 1 / (AC.flapSteps || 2);
-      P.flapT = Math.max(0, Math.min(1, Math.round((P.flapT + (e.code === 'KeyG' ? st : -st)) / st) * st));
+      P.flapT = Math.max(0, Math.min(1, Math.round((P.flapT + (e.code === 'KeyF' ? st : -st)) / st) * st));
       const deg = Math.round(P.flapT * (AC.flapMax || 30));
       toast(deg ? `Flaps ${deg}°` : 'Flaps up');
     }
@@ -3062,18 +3064,24 @@ function togglePause() {
 
 // ---------- tweaks: every value is a multiplier on the stock setting, 1 = stock ----------
 const TW_DEF = [
-  ['rampIn', 'Stick ramp-in time', 0, 2], ['rampOut', 'Stick release time', 0, 2], ['expo', 'Expo (soft center)', 0, 2],
-  ['elev', 'Elevator deflection', 0.2, 1.8], ['ail', 'Aileron deflection', 0.2, 1.8], ['rud', 'Rudder deflection', 0.2, 1.8],
+  ['#', 'Truck'],
+  ['fan', 'Fan suction (left = off)', 0, 2], ['fall', 'Jump gravity (left = 1 g)', 0, 2], ['power', 'Engine power', 0.4, 1.6],
+  ['grip', 'Traction', 0.4, 1.6], ['steer', 'Steering lock', 0.2, 1.8], ['rampIn', 'Steering speed in', 0.2, 2], ['rampOut', 'Steering return', 0.2, 2],
+  ['brake', 'Brakes', 0.2, 1.8],
+  ['#', 'Glider'],
+  ['elev', 'Pitch (elevator)', 0.2, 1.8], ['ail', 'Roll (ailerons)', 0.2, 1.8], ['rud', 'Rudder', 0.2, 1.8], ['expo', 'Soft stick center (expo)', 0, 2],
   ['mix', 'Aileron-rudder mix', 0, 2], ['stab', 'Pitch stability', 0.3, 1.7], ['damp', 'Rotation damping', 0.3, 1.7],
-  ['thrRate', 'Throttle response', 0.2, 1.8], ['power', 'Engine power', 0.4, 1.6], ['flapRate', 'Flap speed', 0.2, 1.8],
-  ['steer', 'Car steering lock', 0.2, 1.8], ['grip', 'Car traction', 0.4, 1.6], ['boost', 'Shift boost deflection', 0, 2], ['brake', 'Wheel brake strength', 0.2, 1.8], ['ftrim', 'Flap autotrim (left = off)', 0, 2], ['camLag', 'Camera swing', 0, 2], ['wind', 'Wind strength', 0, 2],
+  ['flapRate', 'Flap speed', 0.2, 1.8], ['ftrim', 'Flap autotrim (left = off)', 0, 2], ['boost', 'Shift extra throw', 0, 2],
+  ['#', 'World'],
+  ['camLag', 'Camera swing', 0, 2], ['wind', 'Wind strength', 0, 2],
 ];
-const TW = {};
-TW_DEF.forEach(([k]) => { TW[k] = 1; });
+const TW = { thrRate: 1 };
+TW_DEF.forEach(([k]) => { if (k !== '#') TW[k] = 1; });
 try { Object.assign(TW, JSON.parse(localStorage.getItem('rimrunner-tweaks') || '{}')); } catch (e) {}
 function buildTweaks() {
   const list = $('twlist'); list.innerHTML = '';
   TW_DEF.forEach(([k, label, mn, mx]) => {
+    if (k === '#') { const h = document.createElement('div'); h.className = 'twsec'; h.textContent = label; list.appendChild(h); return; }
     const row = document.createElement('div'); row.className = 'twrow';
     row.innerHTML = `<label>${label}<span></span></label><input type="range" min="${mn}" max="${mx}" step="0.05">`;
     const inp = row.querySelector('input'), val = row.querySelector('span');
@@ -3086,7 +3094,7 @@ function buildTweaks() {
   });
 }
 $('twbtn').addEventListener('click', () => { $('tw').hidden = !$('tw').hidden; $('twbtn').blur(); });
-$('twreset').addEventListener('click', () => { TW_DEF.forEach(([k]) => { TW[k] = 1; }); try { localStorage.removeItem('rimrunner-tweaks'); } catch (e) {} buildTweaks(); $('twreset').blur(); });
+$('twreset').addEventListener('click', () => { TW_DEF.forEach(([k]) => { if (k !== '#') TW[k] = 1; }); try { localStorage.removeItem('rimrunner-tweaks'); } catch (e) {} buildTweaks(); $('twreset').blur(); });
 buildTweaks();
 
 // ---------- hydrofoil: buoyant hull, foils that lift it out of the water, waterjet, rudder ----------
@@ -3251,8 +3259,8 @@ function stepPlane(dt) {
     if (k('KeyZ')) { const f = Math.exp(-dt * 8); STK.p *= f; STK.r *= f; STK.y *= f; }
     pitch = STK.p; roll = STK.r; yaw = STK.y;
   }
-  if (k('KeyR')) P.throttle += dt * 0.6 * TW.thrRate;
-  if (k('KeyF')) P.throttle -= dt * 0.6 * TW.thrRate;
+  if (!A.car && k('KeyR')) P.throttle += dt * 0.6;
+  if (!A.car && k('KeyF')) P.throttle -= dt * 0.6;
   const engineOut = engineOff();
   P.throttle = engineOut && !A.heli ? 0 : Math.min(1, Math.max(0, P.throttle));
   if (A.flaps) P.flap += Math.max(-dt * 0.4 * TW.flapRate, Math.min(dt * 0.4 * TW.flapRate, P.flapT - P.flap));
@@ -3264,8 +3272,9 @@ function stepPlane(dt) {
   else { const grow = steerIn !== 0 && (P.steer === 0 || Math.sign(steerIn) === Math.sign(P.steer)) && Math.abs(steerIn) > Math.abs(P.steer);
     const sr = grow ? 3.2 / Math.max(0.05, TW.rampIn) : 7 / Math.max(0.05, TW.rampOut);
     P.steer += Math.max(-sr * dt, Math.min(sr * dt, steerIn - P.steer)); }
-  if (k('Comma')) P.trim = Math.max(-1, P.trim - dt * 0.35);
-  if (k('Period')) P.trim = Math.min(1, P.trim + dt * 0.35);
+  // T / G (or , / .) trim the nose down / up
+  if (k('Comma') || k('KeyT')) P.trim = Math.max(-1, P.trim - dt * 0.35);
+  if (k('Period') || k('KeyG')) P.trim = Math.min(1, P.trim + dt * 0.35);
   const yawMix = Math.max(-1, Math.min(1, yaw + (A.car ? 0 : mixOn && !A.heli ? roll * 0.55 * TW.mix : 0)));
   ctl.p = ease(ctl.p, pitch, dt); ctl.r = ease(ctl.r, roll, dt); ctl.y = ease(ctl.y, yawMix, dt);
 
@@ -3286,7 +3295,7 @@ function stepPlane(dt) {
   const wg = A.wings ? P.wing : 1;
   if (A.car) {
     const vf = P.v.dot(fwd);
-    let gas = k('KeyI') || dk('KeyW') || (!A.heli && k('KeyR')) || (TOUCH.on && TOUCH.gas), brk = k('KeyK') || dk('KeyS') || (!A.heli && k('KeyF'));
+    let gas = k('KeyI') || dk('KeyW') || (TOUCH.on && TOUCH.gas), brk = k('KeyK') || dk('KeyS');
     if (LOCK.on && vf > LOCK.vcap) { gas = false; if (vf > LOCK.vcap + 1.5) brk = true; }
     carBrake = brk && vf > 0.5;
     if (ARC) {
@@ -3298,7 +3307,9 @@ function stepPlane(dt) {
     carDrive = gas ? Math.min(M * (A.accMax || 12), (A.pwr || 750000) * TW.power / Math.max(Math.abs(vf), 1)) : (brk && vf <= 0.5 ? -M * 4 : 0);
     if (P.wheels >= 2) F.addScaledVector(up, -M * 0.0006 * vf * vf * (A.wings ? 1 - wg : 1));
     // downforce fans: a steady pull into the ground at any speed, for as long as a wheel is touching and the wings are folded
-    if (A.fan && P.wheels >= 1) F.addScaledVector(up, -M * A.fan * (1 - wg));
+    if (A.fan && P.wheels >= 1) F.addScaledVector(up, -M * A.fan * TW.fan * (1 - wg));
+    // jump gravity: airborne with the wings folded it gets pulled down harder than 1 g, so jumps land instead of floating
+    if (A.jumpG && !P.wheels) F.y -= M * G * A.jumpG * TW.fall * (1 - wg);
     if (!A.heli) F.addScaledVector(vaW, -M * (0.004 + 0.0004 * vaW.length()) * (A.airDrag !== undefined && !P.wheels ? A.airDrag : 1));
   }
 
@@ -3352,9 +3363,10 @@ function stepPlane(dt) {
       const vh = vb.clone().divideScalar(V);
       const liftDir = new V3(1, 0, 0).cross(vh);
       if (liftDir.lengthSq() > 1e-6) liftDir.normalize();
+      // folded the body still has drag but no wing, so no lift: it flies like a brick until C
       const qd = 0.5 * RHO * V * V * A.S * (A.wings ? 0.04 + 0.96 * wg : 1), cl =CL(alpha) + P.flap * (A.flapCL || 0.6) * (Math.abs(alpha) < A.aStall ? 1 : 0.5);
       const cd = A.cd0 + (A.kInd || 0.06) * cl * cl + 1.1 * Math.sin(alpha) ** 2 + (A.flapCD || 0.07) * P.flap * P.flap;
-      const fb = liftDir.multiplyScalar(qd * cl).addScaledVector(vh, -qd * cd);
+      const fb = liftDir.multiplyScalar(qd * cl * (A.wings ? wg * wg : 1)).addScaledVector(vh, -qd * cd);
       fb.x -= qd * 0.35 * beta;
       F.add(fb.applyQuaternion(P.q));
     }

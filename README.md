@@ -23,12 +23,13 @@ On a phone the game switches to tilt controls (pick Keyboard or Phone on the men
 ## The truck
 
 - Long-travel suspension on big 39-inch-style tires, ~400 kW, about 408 km/h flat out.
-- Two downforce fans pull it into the ground while the wings are folded, so it corners and climbs like nothing else.
-- **C** grows the glider wings and folds them again. Flaps go to 50° in 10° steps on **G** / **T**.
+- Two downforce fans pull it into the ground while the wings are folded, so it corners and climbs like nothing else. The fan suction has a slider in the Tweaks panel (O).
+- With the wings folded it has no lift and falls at about 1.8 g, so jumps come back down instead of floating. Jump gravity has a slider too.
+- **C** grows the glider wings and folds them again. Flaps go to 50° in 10° steps on **F** / **R**; **T** / **G** trim the nose down / up.
 - It rights itself and shrugs off hard landings, but not a canyon wall.
 
 ## Keyboard
 
-W A S D drive (and fly once airborne) · I gas with road lock · J K L steer and brake · B handbrake · C wings · G T flaps · V views · N map · O tweaks · H every control.
+W A S D drive (and fly once airborne) · I gas with road lock · J K L steer and brake · B handbrake · C wings · F R flaps · T G trim · V views · N map · O tweaks · H every control.
 
 Started as a fork of Drop Zone, keeping only the Glide Buggy.
