@@ -14,6 +14,8 @@ One HTML file, three.js r128 from a CDN, no build step. Open `index.html` in a b
 
 0. **Free Roam**: no clock, no score. Tab opens a map to teleport anywhere.
 
+Yellow lift beams and red sink beams stand all over the map, in new random spots every time you load. Fly into a yellow one and it hauls you up 500 ft; a red one drops you 500 ft (never closer than about 80 ft to the ground). They show on the map as yellow and red dots.
+
 Fly off the edge of the map and you get dropped somewhere random, 280 m up, upside down.
 
 ## Phones
@@ -22,6 +24,7 @@ On a phone the game switches to tilt controls (pick Keyboard or Phone on the men
 
 ## The truck
 
+- Trophy-truck size: about 5.2 m long and 2.4 m across the tires, on a 2.76 m wheelbase.
 - Long-travel suspension on big 39-inch-style tires, ~400 kW, about 408 km/h flat out.
 - Two downforce fans pull it into the ground while the wings are folded, so it corners and climbs like nothing else. The fan suction has a slider in the Tweaks panel (O).
 - With the wings folded it has no lift and falls at about 1.8 g, so jumps come back down instead of floating. Jump gravity has a slider too.

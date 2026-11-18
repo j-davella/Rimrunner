@@ -1492,8 +1492,12 @@ function addCockpit(g, parts, o) {
 // ---------- Glide Buggy: a small trophy truck with long-travel swing arms and wings that grow out of the roll hoop ----------
 function buildBuggy() {
   // g is the sprung body: the render loop pitches and rolls it on its suspension inside the outer group, which is what the physics moves
-  const outer = new THREE.Group(), g = new THREE.Group(), parts = { props: [], discs: [], flaps: [], strobes: [], wheelSpin: [], frontSteer: [], flames: [], legs: [], body: g };
-  outer.add(g);
+  // g0 is the sprung body. The bodywork is modelled small inside g and g is stretched by TS to trophy-truck size
+  // (about 5.2 m long, 2.4 m over the tires); suspension and wheels sit in g0 at full size so the tires stay round.
+  const TS = new V3(1.3, 1.1, 1.45), TRACK = 1.0, BASE = 1.38;
+  const outer = new THREE.Group(), g0 = new THREE.Group(), g = new THREE.Group(), parts = { props: [], discs: [], flaps: [], strobes: [], wheelSpin: [], frontSteer: [], flames: [], legs: [], body: g0 };
+  outer.add(g0); g0.add(g); g.scale.copy(TS);
+  const unscale = (o, rx = false) => { if (rx) o.scale.set(1 / TS.x, 1 / TS.z, 1 / TS.y); else o.scale.set(1 / TS.x, 1 / TS.y, 1 / TS.z); return o; };
   const paint = PH_(0xf26a1b, { roughness: 0.28, clearcoat: 0.9 }), white = PH_(0xf4f4f0, { roughness: 0.4, clearcoat: 0.4 }), tubeM = M_(0x1b1d20, { roughness: 0.4, metalness: 0.6 });
   const dark = M_(0x141517, { roughness: 0.75 }), rub = M_(0x101011, { roughness: 0.95, envMapIntensity: 0.05 }), alu = M_(0xb9bdc3, { roughness: 0.3, metalness: 0.9 });
   const shock = M_(0xf5c400, { roughness: 0.4 }), blue = PH_(0x1e63c8, { roughness: 0.3, clearcoat: 0.8 });
@@ -1533,7 +1537,7 @@ function buildBuggy() {
   // box fenders: a deep arch over each wheel and a flat flare on top, with room for the wheel to come up into it
   { const sh = new THREE.Shape(); sh.absarc(0, 0, 0.75, 0.12, Math.PI - 0.12, false); sh.absarc(0, 0, 0.65, Math.PI - 0.12, 0.12, true);
     const fg = ext(sh, 0.44, 0.015);
-    [[-1, -0.95], [1, -0.95], [-1, 0.95], [1, 0.95]].forEach(([sd, z]) => { mk(fg, paint, g, sd * 0.76, -0.2, z); }); }
+    [[-1, -0.95], [1, -0.95], [-1, 0.95], [1, 0.95]].forEach(([sd, z]) => { mk(fg, paint, g, sd * TRACK / TS.x, -0.2, z * BASE / 0.95 / TS.z).scale.set(1.2 / TS.x, 1 / TS.y, 1 / TS.z); }); }
   // nose: grille, light boxes and a tube pre-runner bumper
   box(0.5, 0.16, 0.03, dark, 0, 0.04, -1.715);
   [-1, 1].forEach(sd => {
@@ -1547,7 +1551,7 @@ function buildBuggy() {
   // bed: floor, rails, the spare lying flat, and two bypass shocks per side climbing to the cage
   box(0.92, 0.02, 0.86, dark, 0, 0.43, 1.05);
   [-1, 1].forEach(sd => box(0.06, 0.08, 0.92, paint, sd * 0.5, 0.47, 1.05));
-  { const sp = pivot(g, 0, 0.56, 1.06); sp.rotation.x = Math.PI / 2;
+  { const sp = pivot(g, 0, 0.56, 1.06); sp.rotation.x = Math.PI / 2; unscale(sp, true);
     mk(new THREE.TorusGeometry(0.26, 0.12, 10, 22), rub, sp); mk(new THREE.CylinderGeometry(0.17, 0.17, 0.14, 14).rotateX(Math.PI / 2), alu, sp);
     rod(g, [-0.32, 0.56, 1.06], [0.32, 0.56, 1.06], 0.015, shock); }
   [-1, 1].forEach(sd => [0.66, 0.8].forEach(z => {
@@ -1558,7 +1562,7 @@ function buildBuggy() {
   // downforce fans: a ducted fan in a pod on each sill, between the wheels. They suck the car down while the wings are folded.
   parts.fans = [];
   [-1, 1].forEach(sd => {
-    const pod = pivot(g, sd * 0.6, -0.1, 0.02);
+    const pod = unscale(pivot(g, sd * 0.6, -0.1, 0.02));
     mk(new THREE.CylinderGeometry(0.23, 0.25, 0.13, 24, 1, true), (() => { const m = dark.clone(); m.side = THREE.DoubleSide; return m; })(), pod);
     mk(new THREE.TorusGeometry(0.235, 0.022, 8, 28).rotateX(Math.PI / 2), blue, pod, 0, 0.065, 0);
     box(0.44, 0.012, 0.02, alu, 0, 0.07, 0, pod); box(0.02, 0.012, 0.44, alu, 0, 0.07, 0, pod);
@@ -1575,7 +1579,7 @@ function buildBuggy() {
   box(0.12, 0.08, 0.3, dark, 0.32, 0.93, 0.25);
   // seat, driver, wheel
   box(0.4, 0.5, 0.08, dark, 0, 0.34, 0.36).rotation.x = -0.2; box(0.4, 0.06, 0.4, dark, 0, 0.1, 0.16);
-  const pilot = new THREE.Group(); g.add(pilot); parts.pilot = pilot;
+  const pilot = new THREE.Group(); g.add(pilot); parts.pilot = pilot; pilot.scale.set(1 / TS.x, 1, 1 / TS.z); pilot.position.z = 0.05;
   mk(new THREE.CylinderGeometry(0.15, 0.17, 0.42, 12), dark, pilot, 0, 0.34, 0.2).rotation.x = -0.25;
   mk(new THREE.SphereGeometry(0.14, 18, 14), white, pilot, 0, 0.68, 0.14);
   mk(new THREE.SphereGeometry(0.142, 18, 10, Math.PI * 1.1, Math.PI * 0.8, 1.0, 0.7), M_(0x111111, { roughness: 0.05, metalness: 0.8 }), pilot, 0, 0.68, 0.14);
@@ -1587,12 +1591,12 @@ function buildBuggy() {
   const rim = new THREE.CylinderGeometry(0.26, 0.26, 0.3, 18); rim.rotateZ(Math.PI / 2);
   const bead = new THREE.TorusGeometry(0.26, 0.025, 6, 24); bead.rotateY(Math.PI / 2);
   const knob = new THREE.BoxGeometry(0.35, 0.045, 0.09), spoke = new THREE.BoxGeometry(0.02, 0.48, 0.06);
-  [[-1, -0.95, true], [1, -0.95, true], [-1, 0.95, false], [1, 0.95, false]].forEach(([sd, z, front]) => {
-    const leg = pivot(g, sd * 0.2, -0.1, z), W = [sd * 0.56, -0.3, 0];
+  [[-1, -BASE, true], [1, -BASE, true], [-1, BASE, false], [1, BASE, false]].forEach(([sd, z, front]) => {
+    const leg = pivot(g0, sd * (TRACK - 0.56), -0.1, z), W = [sd * 0.56, -0.3, 0];
     [-0.17, 0.17].forEach(dz => { rod(leg, [0, 0.1, dz], [W[0] - sd * 0.06, W[1] + 0.1, 0], 0.02, alu); rod(leg, [0, -0.08, dz], [W[0] - sd * 0.06, W[1] - 0.08, 0], 0.024, alu); });
-    const sk = new THREE.Group(); g.add(sk);
+    const sk = new THREE.Group(); g0.add(sk);
     mk(new THREE.CylinderGeometry(0.05, 0.05, 0.62, 12), shock, sk, 0, 0.16, 0); mk(new THREE.CylinderGeometry(0.02, 0.02, 1, 8), alu, sk);
-    leg.userData.shock = { m: sk, top: new V3(sd * 0.37, 0.34, z), arm: new V3(sd * 0.4, -0.3, 0) };
+    leg.userData.shock = { m: sk, top: new V3(sd * (TRACK - 0.39), 0.38, z), arm: new V3(sd * 0.4, -0.3, 0) };
     const hub = pivot(leg, W[0], W[1], 0), grp = pivot(hub, 0, 0, 0), spin = new THREE.Group(); grp.add(spin); leg.userData.hub = hub;
     rod(hub, [-sd * 0.21, -0.13, 0], [-sd * 0.21, 0.15, 0], 0.03, tubeM);
     mk(tire, rub, spin); mk(rim, alu, spin); mk(bead, blue, spin, sd * 0.15, 0, 0);
@@ -1634,11 +1638,11 @@ const AIRCRAFT = {};
 // any real tire (grip, offGrip), the mass is treated as sitting at axle height (cgH) so it cannot trip over that
 // grip, and steerA asks the front wheels for a set cornering force at any speed.
 AIRCRAFT.buggy = { name: 'Glide Buggy', car: true, wings: true, model: BG.g, parts: BG.parts, M: 320, S: 16, I: new V3(380, 520, 300),
-  wheels: [[-0.76, -0.95, true], [0.76, -0.95, true], [-0.76, 0.95, false], [0.76, 0.95, false]].map(([x, z, f]) => ({ p: new V3(x, -0.9, z), k: 6500, k2: 45000, c: 900, c2: 12000, bump: 0.6, steer: f, front: f })),
+  wheels: [[-1.0, -1.38, true], [1.0, -1.38, true], [-1.0, 1.38, false], [1.0, 1.38, false]].map(([x, z, f]) => ({ p: new V3(x, -0.9, z), k: 6500, k2: 45000, c: 900, c2: 12000, bump: 0.6, steer: f, front: f })),
   hardV: 14, gear: BG.parts.legs, gearArm: 0.56, gearL: Math.hypot(0.56, 0.3), gearDrop: 0.3, noFlip: true, crashV: 45, wheelR: 0.5, pwr: 400000, accMax: 32, fan: 26, jumpG: 0.8, grip: 2.4, offGrip: 1.25, steerA: 60, cgH: 0.72, rollK: 0.012,
-  hard: hardPts([[0, 0.95, 0.17]]),
+  hard: hardPts([[0, 1.05, 0.25]]),
   thrust: 0, vmax: 60, cl0: 0.3, aStall: 0.27, cd0: 0.01, kInd: 0.025, airDrag: 0.15, gn: { elev: 5, ail: 8, rud: 4, stab: 20, beta: 7, damp: [5, 3, 4] }, vref: 22, trim: 0.05, flaps: true, flapMax: 50, flapSteps: 5, flapCL: 1.125, flapCD: 0.25,
-  cam: { d: 8, h: 2.4 }, size: 6, eye: new V3(0, 0.7, 0.02), wingCam: new V3(-1.5, 0.9, 0.5),
+  cam: { d: 10, h: 2.9 }, size: 7.5, eye: new V3(0, 0.76, 0.1), wingCam: new V3(-2, 1.0, 0.7),
   panel: { asi: [250, [0, 50, 100, 150, 200, 250], [[0, 200, '#2fbf5a'], [200, 250, '#e23b3b']]], eng: 'tq' },
   drop: new V3(0, -0.3, 0), spawnBack: 4, vSpawn: 24, fireScale: 1.2, debris: [0xf26a1b, 0x1b1d20, 0xf4f4f0] };
 // the rearmost hard points of anything with a tail are marked as skids: a tail strike scrapes instead of crashing
@@ -1830,6 +1834,7 @@ function groundSpawn(pos, dir, sp) {
   P.v.copy(dir).setY(0).normalize().multiplyScalar(sp); P.throttle = 0; P.thrArm = false; P.wing = P.wingT = 0; P.wheels = AC.wheels.length;
 }
 function spawnAir(pos, dir, speed) {
+  BEAM.move = 0; BEAM.inside = null;
   if (AC.boat) { let bi = 0, bd = 1e18; RIV.pts.forEach((p, i) => { const d = p.distanceToSquared(pos); if (d < bd) { bd = d; bi = i; } }); boatOnRiver(bi); return; }
   const d = dir.clone().setY(0).normalize();
   P.pos.copy(pos);
@@ -2172,6 +2177,51 @@ const THV = (() => {
   return { spin };
 })();
 function thermalAnim(dt) { for (const s of THV.spin) s.g.rotation.y += s.rate * dt; }
+
+// ---------- lift and sink beams: fly into a yellow one and it hauls you up 500 ft, a red one drops you 500 ft ----------
+// placed at random on every load; the move is spread over ~2 s and a red one never puts you closer than 25 m to the ground
+const BEAM_FT = 152.4, BEAM_H = 1800;
+const BEAM = (() => {
+  const list = [], ok = (x, z) => Math.hypot(x, z) > 400 && Math.hypot(x, z) < 5600 && !list.some(b => Math.hypot(b.x - x, b.z - z) < 350);
+  const mats = {};
+  [['up', 0xffd21a], ['down', 0xff2a1a]].forEach(([k, c]) => {
+    mats[k] = [new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.22, depthWrite: false, side: THREE.DoubleSide, fog: false }),
+      new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.6, depthWrite: false, fog: false })];
+  });
+  const outerG = new THREE.CylinderGeometry(24, 24, BEAM_H, 20, 1, true), coreG = new THREE.CylinderGeometry(6, 6, BEAM_H, 10, 1, true);
+  const put = (dir, n) => {
+    for (let t = 0; t < n * 40 && list.filter(b => b.dir === dir).length < n; t++) {
+      const a = Math.random() * Math.PI * 2, r = Math.sqrt(Math.random()) * 5600, x = Math.cos(a) * r, z = Math.sin(a) * r;
+      if (!ok(x, z)) continue;
+      const base = hAt(x, z), g = new THREE.Group(); g.position.set(x, base + BEAM_H / 2, z);
+      const m = new THREE.Mesh(outerG, mats[dir][0]), c = new THREE.Mesh(coreG, mats[dir][1]);
+      m.renderOrder = c.renderOrder = 3; g.add(m, c); scene.add(g);
+      list.push({ x, z, base, r: 24, dir });
+    }
+  };
+  put('up', 40); put('down', 28);
+  return { list, mats, move: 0, inside: null };
+})();
+function beamStep(dt) {
+  const t = game.t;
+  BEAM.mats.up[0].opacity = 0.2 + 0.07 * Math.sin(t * 3); BEAM.mats.down[0].opacity = 0.2 + 0.07 * Math.sin(t * 3 + 1.5);
+  let hit = null;
+  for (const b of BEAM.list) {
+    const dx = P.pos.x - b.x, dz = P.pos.z - b.z;
+    if (dx * dx + dz * dz < b.r * b.r && P.pos.y > b.base && P.pos.y < b.base + BEAM_H) { hit = b; break; }
+  }
+  if (hit && hit !== BEAM.inside && !P.wheels) {
+    if (hit.dir === 'up') { BEAM.move = BEAM_FT; toast('Lift beam +500 ft'); }
+    else { const agl = P.pos.y - groundAt(P.pos.x, P.pos.z, P.pos.y + 5); BEAM.move = -Math.max(0, Math.min(BEAM_FT, agl - 25)); toast('Sink beam −500 ft'); }
+  }
+  BEAM.inside = hit;
+  if (BEAM.move) {
+    const sp = 40 + 60 * Math.min(1, Math.abs(BEAM.move) / 60), d = Math.sign(BEAM.move) * Math.min(Math.abs(BEAM.move), sp * dt);
+    const floor = groundAt(P.pos.x, P.pos.z, P.pos.y + 5) + 25;
+    if (d < 0 && P.pos.y + d < floor) BEAM.move = 0;
+    else { P.pos.y += d; BEAM.move -= d; if (Math.abs(BEAM.move) < 0.01) BEAM.move = 0; }
+  }
+}
 
 // ---------- landing pads: a ring painted onto the ground and a flag ----------
 const PADS = [];
@@ -2572,6 +2622,7 @@ function drawMap() {
   if (game.mode === 'deadstick' || game.mode === 'po180') dot(0, SPOT_Z, '#ff7a1a', 5);
   if (game.mode === 'stol') { dot(0, STOL.t0, '#ffffff', 4); dot(0, STOL.l0, '#f5c400', 5); }
   // thermals as faint rings, landing pads as dots, the next one bigger
+  BEAM.list.forEach(t => { const [a, b] = toMap(t.x, t.z); if (a < -5 || b < -5 || a > D + 5 || b > D + 5) return; g.fillStyle = t.dir === 'up' ? '#ffd21a' : '#ff3a2a'; g.beginPath(); g.arc(a, b, 3, 0, 7); g.fill(); });
   THERM.forEach(t => { const [a, b] = toMap(t.x, t.z); if (a < -20 || b < -20 || a > D + 20 || b > D + 20) return; g.strokeStyle = 'rgba(255,240,200,.75)'; g.lineWidth = 1.5; g.beginPath(); g.arc(a, b, Math.max(3, t.r * k2), 0, 7); g.stroke(); });
   PADS.forEach((pd, i) => dot(pd.x, pd.z, i === padNext() ? '#ff7a1a' : 'rgba(255,255,255,.8)', i === padNext() ? 5 : 3));
   const fw = new V3(0, 0, -1).applyQuaternion(P.q);
@@ -3794,6 +3845,7 @@ function step(dt) {
       TRAIL.push({ t: game.t, pos: P.pos.clone(), q: P.q.clone(), sp: P.v.length(), gnd: P.wheels >= 2, wet: waterAt(P.pos.x, P.pos.z) !== null });
       if (TRAIL.length > 48) TRAIL.shift();
     }
+    if (!P.crashed) beamStep(dt);
     if (!P.crashed && pylonHit()) crash('Hit a pylon −50');
     if (!P.crashed && (game.mode === 'pylon' || game.mode === 'canyon')) checkRace();
     if (!P.crashed && game.mode === 'drop') {
