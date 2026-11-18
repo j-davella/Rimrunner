@@ -1672,7 +1672,7 @@ const WINGS = {
   // plane's big surfaces do: roll / pitch / yaw rates in rad/s at full stick, it stops dead when you let go and holds
   // whatever attitude you left it in. Weak pitch stability, no auto-coordination, a fuselage that holds knife edge.
   speed: { span: 0.8, chord: 0.9, sweep: 0.2, S: 12, cl0: 0, cd0: 0.0028, kInd: 0.016, airDrag: 0.05, aStall: 0.3, trim: 0.022, gn: { elev: 9, ail: 22, rud: 6, stab: 7, beta: 6, damp: [3.2, 2.2, 1.6] },
-    acro: { roll: 3.0, pitch: 3.0, yaw: 1.7, side: 0.9, track: 28 } },
+    acro: { roll: 3.0, pitch: 2.6, g: 5, yaw: 1.5, side: 0.9, track: 9 } },
 };
 let wingId = 'glider';
 const wheelDef = (M, share, p, steer = false) => { const k = M * 9.8 * share / 0.05; return { p: new V3(...p), k, c: 2 * 0.7 * Math.sqrt(k * M * share), steer }; };
@@ -3303,7 +3303,7 @@ function CL(a) {
 const tq = new THREE.Quaternion();
 const fwd = new V3(), up = new V3(), right = new V3();
 const ease = (cur, tgt, dt) => { const acro = AC.acro && P.wing > 0.5, grow = Math.abs(tgt) > Math.abs(cur);
-  return cur + (tgt - cur) * (1 - Math.exp(-dt / (grow ? 0.32 * TW.rampIn * (acro ? 0.3 : 1) : 0.2 * TW.rampOut * (acro ? 0.1 : 1)))); };
+  return cur + (tgt - cur) * (1 - Math.exp(-dt / (grow ? 0.32 * TW.rampIn * (acro ? 0.6 : 1) : 0.2 * TW.rampOut * (acro ? 0.6 : 1)))); };
 const expo = v => { const e = Math.min(1, 0.65 * TW.expo); return v * (1 - e + e * v * v); };
 // car steering lock shrinks with speed so full key = the most turn the tires can actually hold, never a plow or a spin
 // steerA: wheelbase x the cornering acceleration full lock asks for, so the car turns as hard at 150 km/h as at 30
@@ -3514,7 +3514,9 @@ function stepPlane(dt) {
       // rate control: each axis chases the rate the stick asks for (scaled by airflow), so rolls start and stop crisply
       // and nothing levels itself. Pitch keeps a weak pull toward the trim angle of attack; yaw keeps its weathervane.
       const ac = A.acro, sf = Math.min(1, V / A.vref) * wg, kt = ac.track * TW.damp * Math.max(0.25, sf);
-      const pc = expo(ctl.p) * ac.pitch * TW.elev * boostF * sf * (ctl.p > 0 ? 1 - 0.6 * smooth(A.aStall * 0.9, A.aStall * 1.2, alpha) : 1);
+      // full stick pulls about ac.g g at speed (less pushing): pitch rate = g load / speed, so fast flight isn't twitchy
+      const pMax = Math.min(ac.pitch, ac.g * G / Math.max(V, 1) * (ctl.p < 0 ? 0.7 : 1));
+      const pc = expo(ctl.p) * pMax * TW.elev * boostF * sf * (ctl.p > 0 ? 1 - 0.6 * smooth(A.aStall * 0.9, A.aStall * 1.2, alpha) : 1);
       const rc = expo(ctl.r) * ac.roll * TW.ail * boostF * sf * (stalled ? 0.5 : 1), yc = expo(ctl.y) * ac.yaw * TW.rud * boostF * sf;
       ang.set(
         kt * (pc - P.w.x) - qn * gn.stab * TW.stab * (alpha - trimA),
